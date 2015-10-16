@@ -56,21 +56,43 @@ For further information on validation rules see the [cakephp documentation on va
 You can also access the localized validators any time you would call `Validation` methods. After importing the validation class.
 
 ```php
-	if (Validation::postal($value, null, 'cz')) {
-		// Do something with valid postal code
-	}
+if (Validation::postal($value, null, 'cz')) {
+	// Do something with valid postal code
+}
 ```
 
-## Po files
+## Dynamic forwarding of validation
+Using a snippet like the following could reduce the manual include/setup part when using multiple localizations:
+```php
+// Inside your custom validation rule validatePostal()
+// $country (de, at, ...) and $value (12345, 1234, ...) given
+$className = ucfirst($country) . 'Validation';
+App::uses($className, 'Localized.Validation');
 
-This plugin also houses translations for the client-facing translated strings in the core (the cake domain). to use these files link or copy them
-into their expected location: `APP/locale/<locale>/LC_MESSAGES/cake.po`
+// Skip if we don't have that country, then only check for existence
+if (!class_exists($className) || !method_exists($className, 'postal')) {
+	return !empty($value);
+}
+
+try {
+	$result = Validation::postal($value, null, $country);
+} catch (NotImplementedException $e) {
+	$result = !empty($value);
+}
+
+return $result;
+```
+
+## PO files
+
+This plugin also houses translations for the client-facing translated strings in the core (the `cake` domain). to use these files link or copy them
+into their expected location: `APP/Locale/<locale>/LC_MESSAGES/cake.po`
 
 ## LC_TIME files
 
 This plugin also houses POSIX compliant LC_TIME files which are used for translating
 time related string of LC_TIME domain. To use these files link or copy them into
-their expected location: `APP/locale/<locale>/LC_TIME`.
+their expected location: `APP/Locale/<locale>/LC_TIME`.
 
 ## Migration Guide
 
